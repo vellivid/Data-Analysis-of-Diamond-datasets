@@ -1,0 +1,218 @@
+Read the dataset into R and assign it to a data frame called data. Next, split the data into a train sample and a test sample using the following code:
+data=read.csv("diamond dataset.csv")
+set.seed(617)
+split = sample(1:nrow(data), nrow(data)*0.75)
+train = data[split,]
+test = data[-split,]
+#QWhat is the class for “cut”?
+Group of answer choices
+numeric
+integer
+character
+logical
+
+#Ans : character
+
+#What is the maximum price for diamonds of carat size 2 and color D? Use the train sample.
+x=data%>%filter(color=="D",carat==2)
+max(x$price)
+OR 
+x= data[(data$carat==2)&(data$color=="D"),]
+max(x$price)
+#Ans : 17835
+
+#Construct a scatter plot of carat (on the x-axis) and price (on the y-axis). Use the train sample. What is the direction (or trend) of the points?
+ Bottom-left to top-right
+Top-left to bottom-right
+Left to right (or horizontal)
+Bottom to top (or vertical)
+
+#Ans : ggplot(data=train, aes(x=carat, y=price))+ geom_point()+ geom_smooth(method="lm")
+
+#What is the correlation between table and z? Use the train sample.
+cor(data$table,data$z)
+#Ans :  0.1509287
+
+# Build a linear regression model to predict price using z. Call this model1. Use the train sample.What is the model R-squared?Note: Model R-squared refers to the “Multiple R-Squared” of the model.
+
+#Ans : 
+model1=lm(price~z, data=train)
+pred = predict(model1)
+sse = sum((pred - train$price)^2)
+sst = sum((mean(train$price)-train$price)^2)
+model_r2 = 1 - sse/sst; model_r2
+0.7304791
+
+Q: Which of the following is the correct interpretation for the coefficient of z in model1?
+Group of answer choices
+For a 1mm increase in z, price goes up by $2920.05
+For a 1mm increase in z, price goes down by $13887.04
+For a 1mm increase in z, price goes up by $5037.18
+For a 1mm increase in z, price goes up by $0.7687
+
+summary(model1)
+
+#Q. Build a linear regression model to predict price using clarity. Call this model2. Use the train sample.Based on the results of model2, which of the following statements is true?Group of answer choices
+#Price of clarity SI1 diamonds is significantly greater than the price of clarity I1 diamonds
+#Price of clarity VS1 diamonds is significantly greater than the price of clarity VS2 diamonds
+#Price of clarity SI2 diamonds is significantly greater than the price of clarity I1 diamonds
+#Price of clarity SI2 diamonds is $1137.67
+
+model2=lm(price~clarity, data=train)
+summary(model2)
+
+
+#Q. Build a linear regression model to predict price using all variables EXCEPT price_hilo, x, y, and z. Call this model3. Use the train sample. What is the R22 (R-squared) for model3?
+model3=lm(price~carat+cut+color+clarity+depth+table, data=train)
+pred = predict(model3)
+sse = sum((pred - train$price)^2)
+sst = sum((mean(train$price)-train$price)^2)
+model3_r2 = 1 - sse/sst; model3_r2
+0.9147751
+
+#Q. Based on model3, which of the following variables have a statistically significant effect on price? (Check all that apply)Group of answer choices
+carat
+cut
+color
+clarity
+depth
+table
+summary(model3)
+
+#Q.Based on model3, what is the predicted price for the second diamond in the train sample?
+predict(model3, newdata = train[2,])
+
+#QBased on model3, what is the rmse (root mean squared error) for the test sample?
+pred3 = predict(model3, newdata = test)
+sse3 = sum((pred3 - test$price)^2)
+sst3 = sum((mean(test$price)-test$price)^2)
+model3_r2 = 1 - sse3/sst3; model3_r2
+rmse3 = sqrt(mean((pred3-test$price)^2))
+rmse3
+1172.86
+
+#QNow, construct a linear regression model to predict price using the following predictors: carat, depth, table, x, y, z. Use the train sample. Call this model4.
+model4=lm(price~carat+depth+table+x+y+z, data=train)
+install.packages('car')
+library(car)
+#Which predictor has the highest Variance Inflation Factor (VIF)?Group of answer choices
+carat
+depth
+table
+x
+y
+z
+
+vif(model4)
+
+#Run a hybrid stepwise regression using the same predictors as in model4. Which of the following predictors are included in this model? (Select all that apply) Group of answer choices
+carat
+depth
+table
+x
+y
+z
+start_mod = lm(price~1,data=train)
+empty_mod = lm(price~1,data=train)
+full_mod = lm(price~carat+depth+table+x+y+z,data=train)
+hybridStepwise = step(start_mod, scope=list(upper=full_mod,lower=empty_mod), direction='both')
+summary(hybridStepwise)
+
+#Q. Now, construct a logistic regression model to predict price_hilo using the following predictors: carat, cut, color, depth, and table. Use the train sample. Call this model5. For the purpose of the exam, ignore the warning message from running this logistic regression model.What is the AIC for model5?
+model5=glm(price_hilo~carat+cut+color+depth+table, data=train, family = "binomial")
+summary(model5)$aic
+ 
+#q.This question is based on model5. Compared to a Fair cut diamond, how much more likely is a Good cut diamond to have a high price? Group of answer choices: ###DOUBT
+1095% more
+398% more
+160% more
+1.60% more
+exp(summary(model5)$coef[3])
+exp(summary(model5)$coef[3])-1
+#Q. What is the accuracy of model5 in the test sample? Use a threshold of 0.45.
+
+pred=predict(model5,newdata=test,type='response')
+ct=table(price_hilo=test$price_hilo,predictions=as.integer(pred>0.45))
+accuracy=sum(ct[1,1],ct[2,2])/nrow(test)
+
+ 
+#Q. Construct a classification tree (NOT regression tree) to predict price_hilo using the following predictors: carat, cut, color, clarity, depth and table. Use the train sample. Do not specify cp, or minbucket, and do not cross-validate. Call this model6.Which is the most important predictor of price_hilo?
+Group of answer choices
+carat
+cut
+color
+clarity
+depth
+ 
+model6=rpart(price_hilo~carat+cut+color+clarity+ depth+table, data=train, method = 'class')
+rpart.plot(model6)
+ 
+ 
+#q.Based on model6, what is the chance of a 0.6 carat diamond having a High price?
+Group of answer choices
+1%
+19%
+36%
+60%
+
+predict(model6,newdata = data.frame(carat=0.6),type = 'prob')
+predict(model6,newdata = data.frame(carat = 0.85),type = 'class')
+predict(model6,newdata = data.frame(carat = 1.25),type = 'class')
+
+#Q. Based on model6, what is the chance of a 2 carat diamond having a High price?
+Group of answer choices
+1%
+19%
+88%
+94%
+
+predict(model6,newdata = data.frame(carat=2),type = 'prob')
+
+Alternatively, one can set type=‘class’ to get a class prediction.
+predict(model6,newdata = data.frame(carat=2),type = 'class')
+ 
+#Q. Construct a random forest model (using randomForest library) to predict price_hilo with the same predictors used in model6: carat, cut, color, clarity, depth and table. Use factor(price_hilo) as outcome instead of price_hilo. Use the train sample. Set number of trees to 150 and use a seed of 2010617. Do not specify mtry. Do not tune or cross-validate. Call this model7.
+library(randomForest)
+set.seed(2010617)
+model7= randomForest(factor(price_hilo)~carat+cut+color+clarity+ depth+table, data=train,method="class",ntree=150)
+
+
+#Q. In model7, which is the second most important predictor of price_hilo?
+Group of answer choices
+carat
+cut
+color
+clarity
+depth
+
+pred7 = predict(model7, newdata=test, type="prob")[,2]
+importance(model7)
+varImpPlot(model7)
+
+#Q. For model7, what is the Area under the ROC curve (AUC) in the test sample?
+library(ROCR)
+pred = predict(model7,newdata=test,type='prob')
+ROCRpred = prediction(pred[,2],test$price_hilo)
+ROCRperf = performance(ROCRpred,"tpr","fpr")
+as.numeric(performance(ROCRpred,"auc")@y.values)
+
+
+#Q. Use a Support Vector Machine to predict price_hilo using the same predictors as in model7: carat, cut, color, clarity, depth and table. Use factor(price_hilo) as outcome instead of price_hilo. Use the train sample. Use a radial basis function kernel. Do not set cost, gamma or coef0, in other words, use defaults. Do not tune or cross-validate. Call this model8.
+
+library(e1071)
+model8 = svm(price_hilo~carat+cut+color+clarity+depth+table,data=train,kernel='radial',scale=F,type='C-classification')
+
+#Q. Based on model8, how many diamonds in the train sample were predicted to be “low” priced but were actually “high” priced?Group of answer choices
+277
+522
+10608
+18593
+pred = predict(model8)
+mean(pred==train$price_hilo)
+
+
+ 
+#Q. What is the accuracy of model8 in the test sample?
+
+pred = predict(model8,newdata=test)
+mean(pred==test$price_hilo)
